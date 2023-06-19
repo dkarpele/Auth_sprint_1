@@ -11,6 +11,9 @@ class Redis(AbstractCache):
     def __init__(self, **params):
         self.session = AsyncRedis(**params)
 
+    async def close(self):
+        ...
+
     async def get_from_cache_by_id(self, _id: str, model) -> Optional:
         data = await self.session.get(_id)
         if not data:

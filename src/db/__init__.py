@@ -6,36 +6,26 @@ class AbstractStorage(ABC):
     """
     Абстрактный класс для работы с хранилищем данных.
     Описывает какие методы должны быть у подобных классов.
-    get_by_id - возвращает один экземпляр класса модели,
-    по которой строятся получение из хранилища
-    get_list - возвращает список объектов модели, переданной в
-    качестве параметра.
     """
 
     @abstractmethod
-    async def get_by_id(self, _id: str, index: str, model) -> Optional:
+    async def close(self):
         """
-        Абстрактный асинхронный метод для получения данных по id
-        :param _id: строка с id, по которому выполняется поиск
-        :param index: строковое название индекса, в котором выполняется поиск
-        :param model: тип модели, в котором возвращаются данные
-        :return: объект типа, заявленного в model
+        Абстрактный асинхронный метод для закрытия соединения
         """
         ...
 
     @abstractmethod
-    async def get_list(self, model, index: str, sort: str, search: dict,
-                       page: int, size: int) -> list | None:
+    async def create_database(self):
         """
-        Абстрактный асинхронный метод для получения списка данных
-        :param model: тип модели, в котором возвращаются данные
-        :param index: строковое название индекса, в котором выполняется поиск
-        :param sort: строка с названием атрибута, по которой необходима
-        сортировка
-        :param search: словарь с параметрами для поиска, если они необходимы
-        :param page: номер страницы
-        :param size: количество элементов на странице(в списке)
-        :return: список объектов типа model
+        Абстрактный асинхронный метод для создания таблиц бд
+        """
+        ...
+
+    @abstractmethod
+    async def purge_database(self):
+        """
+        Абстрактный асинхронный метод для удаления таблиц бд
         """
         ...
 
@@ -51,6 +41,13 @@ class AbstractCache(ABC):
     :put_to_cache_by_id - кладет данные в кэш по id.
     :put_to_cache_by_key - кладет данные в кэш по ключу.
     """
+
+    @abstractmethod
+    async def close(self):
+        """
+        Абстрактный асинхронный метод для закрытия соединения
+        """
+        ...
 
     @abstractmethod
     async def get_from_cache_by_id(self, _id: str, model) -> Optional:

@@ -1,6 +1,19 @@
 version: '3'
 
 services:
+  postgres:
+    image: postgres:latest
+    privileged: true
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-db:/data/postgres
+    networks:
+      - backend
+
   fastapi:
     build: ./src/
     env_file:
@@ -10,7 +23,7 @@ services:
     expose:
       - "8000"
     depends_on:
-      - es
+      - postgres
       - redis
 
   nginx:
@@ -27,7 +40,6 @@ services:
     networks:
       - backend
 
-
   redis:
     image: redis:latest
     container_name: redis
@@ -39,6 +51,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 50
+
+volumes:
+  postgres-db:
 
 networks:
   backend:

@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
-from api.v1 import registration
-from core.config import settings
+from api.v1 import auth, users, roles
+from core.config import settings, database_dsn
 from core.logger import LOGGING
 from db import redis, postgres
 
@@ -15,12 +15,19 @@ async def startup():
     redis.redis = redis.Redis(host=settings.REDIS_HOST,
                               port=settings.REDIS_PORT,
                               ssl=False)
-
-    await postgres.create_database()
+    postgres.postgres = postgres.Postgres(
+                      f'postgresql+asyncpg://'
+                      f'{database_dsn.user}:{database_dsn.password}@'
+                      f'{database_dsn.host}:{database_dsn.port}/'
+                      f'{database_dsn.dbname}')
+    postgres.get_session()
+    await postgres.postgres.create_database()
 
 
 async def shutdown():
     await redis.redis.close()
+    await postgres.postgres.purge_database()
+    await postgres.postgres.close()
 
 
 @asynccontextmanager
@@ -38,7 +45,9 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan)
 
-app.include_router(registration.router, prefix='/api/v1/user', tags=['user'])
+app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
+app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
+app.include_router(users.router, prefix='/api/v1/users', tags=['roles'])
 
 
 if __name__ == '__main__':

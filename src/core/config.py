@@ -39,3 +39,9 @@ class DBCreds(BaseSettings):
 
 
 database_dsn = DBCreds()
+
+LOGIN_DESC = "user's login"
+FIRST_NAME_DESC = "user's first name"
+LAST_NAME_DESC = "user's last name"
+PASSWORD_DESC = "Password: Minimum eight characters, " \
+                "at least one letter and one number:"
