@@ -1,8 +1,8 @@
-# Service Async API
+# Service Auth API
 
 ## Project structure:
 
-* API service - uses FastApi Async framework to provide API for external services. It loads data from ElasticSearch or cached data from Redis. 
+* API service - uses FastApi Async framework to provide API for external services.
 * tests - pytest based tests for API
 
 
