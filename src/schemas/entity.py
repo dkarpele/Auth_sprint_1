@@ -3,6 +3,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 from core import config
 
+password_regex = "^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
+
 
 class UserCreate(BaseModel):
     login: str = Field(...,
@@ -13,7 +15,7 @@ class UserCreate(BaseModel):
                           description=config.PASSWORD_DESC,
                           min_length=8,
                           max_length=50,
-                          regex='"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"')
+                          regex=password_regex)
     first_name: str = Field(...,
                             description=config.FIRST_NAME_DESC,
                             min_length=3,
