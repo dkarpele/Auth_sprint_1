@@ -26,7 +26,7 @@ async def startup():
 
 async def shutdown():
     await redis.redis.close()
-    await postgres.postgres.purge_database()
+    # await postgres.postgres.purge_database()
     await postgres.postgres.close()
 
 

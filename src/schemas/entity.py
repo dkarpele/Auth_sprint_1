@@ -26,6 +26,8 @@ class UserData(BaseModel):
                            description=config.LAST_NAME_DESC,
                            min_length=3,
                            max_length=50)
+    disabled: bool = Field(default=False,
+                           description="True - active, False - inactive")
 
 
 class UserSignUp(UserLogin, UserData):

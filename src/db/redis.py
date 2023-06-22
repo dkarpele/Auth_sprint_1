@@ -22,9 +22,10 @@ class Redis(AbstractCache):
         res = model.parse_raw(data)
         return res
 
-    async def put_to_cache_by_id(self, entity):
-        await self.session.set(entity.id, entity.json(),
-                               settings.CACHE_EXPIRE_IN_SECONDS)
+    async def put_to_cache_by_id(self, _id, entity, expire):
+        await self.session.set(_id,
+                               entity,
+                               expire)
 
     async def get_from_cache_by_key(self,
                                     model,
