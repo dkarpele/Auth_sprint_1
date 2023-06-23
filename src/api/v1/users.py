@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from http import HTTPStatus
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
@@ -48,6 +48,17 @@ async def change_login_password(
 
     await check_access_token_not_valid(token, cache)
     async with db:
+        user_exists = await db.execute(
+            select(User).
+            filter(User.email == new_login.email)
+        )
+
+        if user_exists.scalars().all():
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail=f"Email {new_login.email} already exists",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         await db.execute(update(User).
                          where(User.email == current_user.email).
                          values(password=get_password_hash(new_login.password),
