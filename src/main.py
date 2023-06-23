@@ -26,7 +26,7 @@ async def startup():
 
 async def shutdown():
     await redis.redis.close()
-    await postgres.postgres.purge_database()
+    # await postgres.postgres.purge_database()
     await postgres.postgres.close()
 
 
@@ -47,7 +47,7 @@ app = FastAPI(
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
-app.include_router(users.router, prefix='/api/v1/users', tags=['roles'])
+app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
 
 
 if __name__ == '__main__':
