@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class RoleCreate(BaseModel):
-    title: str = Field(..., max_length=50)
-    permissions: int = 0
+    title: str = None
+    permissions: int = None
 
 
 class RoleInDB(BaseModel):
