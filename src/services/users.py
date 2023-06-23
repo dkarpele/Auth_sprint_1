@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from api.helpers.token import verify_password, TokenData, ALGORITHM, \
+from services.token import verify_password, TokenData, ALGORITHM, \
     SECRET_KEY, oauth2_scheme
 from db.postgres import get_session
 from models.entity import User

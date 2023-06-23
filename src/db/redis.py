@@ -14,13 +14,12 @@ class Redis(AbstractCache):
     async def close(self):
         ...
 
-    async def get_from_cache_by_id(self, _id: str, model) -> Optional:
+    async def get_from_cache_by_id(self, _id: str) -> Optional:
         data = await self.session.get(_id)
         if not data:
             return None
 
-        res = model.parse_raw(data)
-        return res
+        return data
 
     async def put_to_cache_by_id(self, _id, entity, expire):
         await self.session.set(_id,

@@ -50,11 +50,10 @@ class AbstractCache(ABC):
         ...
 
     @abstractmethod
-    async def get_from_cache_by_id(self, _id: str, model) -> Optional:
+    async def get_from_cache_by_id(self, _id: str) -> Optional:
         """
         Абстрактный асинхронный метод для получения данных по id из кэша
         :param _id: строка с id, по которой выполняется поиск
-        :param model: тип модели, в котором возвращаются данные
         :return: объект типа, заявленного в model
         """
         ...

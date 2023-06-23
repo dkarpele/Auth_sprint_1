@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     REDIS_PORT: int = Field(..., env='REDIS_PORT')
     HOST: str = Field(..., env='HOST')
     PORT: int = Field(..., env='PORT')
-    CACHE_EXPIRE_IN_SECONDS: int = Field(..., env='CACHE_EXPIRE_IN_SECONDS')
     SECRET_KEY: str = Field(..., env='SECRET_KEY')
     SECRET_KEY_REFRESH: str = Field(..., env='SECRET_KEY')
 
