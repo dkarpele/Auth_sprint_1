@@ -65,7 +65,11 @@ async def update_role(role_id: str, role_create: RoleCreate,
                description="удаление роли")
 async def delete_role(role_id: str,
                       db: AsyncSession = Depends(get_session)) -> RoleInDB:
-    role = await db.get(Role, role_id)
-    await db.delete(role)
-    await db.commit()
-    return role
+    try:
+        role = await db.get(Role, role_id)
+        await db.delete(role)
+        await db.commit()
+        return role
+    except DBAPIError:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
+                            detail=f'Role not found')
