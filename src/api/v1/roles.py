@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.roles import Role
 from db.postgres import get_session
-from schemas.entity import UserInDB, UserLogin
+from schemas.roles import RoleInDB, RoleCreate
 
 # Объект router, в котором регистрируем обработчики
 router = APIRouter()
