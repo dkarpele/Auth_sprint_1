@@ -69,6 +69,14 @@ class AbstractCache(ABC):
         ...
 
     @abstractmethod
+    async def delete_from_cache_by_id(self, _id):
+        """
+        Абстрактный асинхронный метод, который удаляет данные из кэша по id
+        :param _id:
+        """
+        ...
+
+    @abstractmethod
     async def get_from_cache_by_key(self,
                                     model,
                                     key: str = None,
