@@ -1,17 +1,18 @@
-from datetime import timedelta
+from datetime import datetime
 from typing import Annotated
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.encoders import jsonable_encoder
 
 from http import HTTPStatus
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.token import Token, create_token, \
-    ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, oauth2_scheme, \
-    add_not_valid_access_token_to_cache
+from services.exceptions import wrong_username_or_password
+from services.token import Token, create_token, oauth2_scheme, \
+    add_not_valid_access_token_to_cache, check_access_token, \
+    refresh_access_token
 from services.users import authenticate_user
 from models.entity import User
 
@@ -58,33 +59,34 @@ async def create_user(
              )
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        db: AsyncSession = Depends(get_db_service)) -> Token:
+        db: AsyncSession = Depends(get_db_service),
+        cache: AbstractCache = Depends(get_cache_service)) -> Token:
     user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+        raise wrong_username_or_password
 
-    access_token = create_token(data={"sub": user.email},
-                                expires_delta=access_token_expires,
-                                _type='access')
-    refresh_token = create_token(data={"sub": user.email},
-                                 expires_delta=refresh_token_expires,
-                                 _type='refresh')
+    access_token, token_expire =\
+        await create_token({"sub": str(user.id)}, cache)
+
     return Token(**{"access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "token_type": "bearer"})
+                    "token_type": "bearer",
+                    "access_token_expires": token_expire})
 
 
 @router.post("/logout",
              description="выход пользователя из аккаунта",
              status_code=HTTPStatus.OK)
 async def logout(
-        token: Annotated[str, Depends(oauth2_scheme)],
-        cache: AbstractCache = Depends(get_cache_service),
-):
+        token: Annotated[Token, Depends(check_access_token)],
+        cache: AbstractCache = Depends(get_cache_service),) -> None:
     await add_not_valid_access_token_to_cache(token, cache)
+
+
+@router.post("/refresh",
+             response_model=Token,
+             description="получить новую пару access/refresh token",
+             status_code=HTTPStatus.OK)
+async def refresh(
+        new_access_token: Annotated[Token, Depends(refresh_access_token)]) \
+        -> Token:
+    return new_access_token

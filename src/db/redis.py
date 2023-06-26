@@ -26,6 +26,9 @@ class Redis(AbstractCache):
                                entity,
                                expire)
 
+    async def delete_from_cache_by_id(self, _id):
+        await self.session.delete(_id)
+
     async def get_from_cache_by_key(self,
                                     model,
                                     key: str = None,

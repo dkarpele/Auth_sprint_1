@@ -7,17 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from sqlalchemy.future import select
 
-from db import AbstractCache
-from db.postgres import get_session
-from db.redis import Redis, get_redis
 from models.entity import User
 from schemas.entity import UserResponseData, UserLogin
-from services.token import check_access_token_not_valid, get_password_hash,\
-    oauth2_scheme
+from services.token import check_access_token, get_password_hash, Token
 from services.users import get_current_active_user
-from services.database import get_db_service, get_cache_service
+from services.database import get_db_service
 
-# Объект router, в котором регистрируем обработчики
 router = APIRouter()
 
 
@@ -26,12 +21,10 @@ router = APIRouter()
             response_model=UserResponseData,
             status_code=HTTPStatus.OK,)
 async def read_users_me(
-        token: Annotated[str, Depends(oauth2_scheme)],
+        check_token: Annotated[Token, Depends(check_access_token)],
         current_user: Annotated[User, Depends(get_current_active_user)],
-        cache: AbstractCache = Depends(get_cache_service),
-) -> UserResponseData:
+        ) -> UserResponseData:
 
-    await check_access_token_not_valid(token, cache)
     return current_user
 
 
@@ -41,12 +34,10 @@ async def read_users_me(
               status_code=HTTPStatus.OK)
 async def change_login_password(
         new_login: UserLogin,
-        token: Annotated[str, Depends(oauth2_scheme)],
+        check_token: Annotated[Token, Depends(check_access_token)],
         current_user: Annotated[User, Depends(get_current_active_user)],
-        cache: AbstractCache = Depends(get_cache_service),
         db: AsyncSession = Depends(get_db_service)) -> UserResponseData:
 
-    await check_access_token_not_valid(token, cache)
     async with db:
         user_exists = await db.execute(
             select(User).
