@@ -6,12 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.token import check_access_token_not_valid, oauth2_scheme
+from services.token import check_access_token, Token
 
 from models.roles import Role
-from db import AbstractCache
 from db.postgres import get_session
-from services.database import get_cache_service
 from schemas.roles import RoleInDB, RoleCreate
 
 # Объект router, в котором регистрируем обработчики
@@ -23,11 +21,11 @@ router = APIRouter()
              status_code=HTTPStatus.CREATED,
              description="создание новой роли",
              response_description="id, title, permissions")
-async def create_role(token: Annotated[str, Depends(oauth2_scheme)],
-                      role_create: RoleCreate,
-                      cache: AbstractCache = Depends(get_cache_service),
-                      db: AsyncSession = Depends(get_session)) -> RoleInDB:
-    await check_access_token_not_valid(token, cache)
+async def create_role(
+        role_create: RoleCreate,
+        check_token: Annotated[Token, Depends(check_access_token)],
+        db: AsyncSession = Depends(get_session)) -> RoleInDB:
+
     role_dto = jsonable_encoder(role_create)
     role = Role(**role_dto)
     async with db:
@@ -50,10 +48,10 @@ async def create_role(token: Annotated[str, Depends(oauth2_scheme)],
             response_model=list[RoleInDB],
             status_code=HTTPStatus.OK,
             description="просмотр всех ролей")
-async def get_all_roles(token: Annotated[str, Depends(oauth2_scheme)],
-                        cache: AbstractCache = Depends(get_cache_service),
-                        db: AsyncSession = Depends(get_session)) -> list[RoleInDB]:
-    await check_access_token_not_valid(token, cache)
+async def get_all_roles(
+        check_token: Annotated[Token, Depends(check_access_token)],
+        db: AsyncSession = Depends(get_session)) -> list[RoleInDB]:
+
     response = await db.execute(select(Role))
     roles = list(response.scalars().all())
     return roles
@@ -63,13 +61,12 @@ async def get_all_roles(token: Annotated[str, Depends(oauth2_scheme)],
               response_model=RoleInDB,
               status_code=HTTPStatus.OK,
               description="изменение роли")
-async def update_role(token: Annotated[str, Depends(oauth2_scheme)],
-                      role_id: str,
-                      role_create: RoleCreate,
-                      cache: AbstractCache = Depends(get_cache_service),
-                      db: AsyncSession = Depends(get_session)) -> RoleInDB:
+async def update_role(
+        role_id: str,
+        role_create: RoleCreate,
+        check_token: Annotated[Token, Depends(check_access_token)],
+        db: AsyncSession = Depends(get_session)) -> RoleInDB:
     try:
-        await check_access_token_not_valid(token, cache)
         async with db:
             role_exists = await db.execute(
                 select(Role).
@@ -92,7 +89,7 @@ async def update_role(token: Annotated[str, Depends(oauth2_scheme)],
                         permissions=role.permissions)
     except DBAPIError:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail=f'Role {role_id} not found',
+                            detail=f'Role with ID: {role_id} not found',
                             headers={"WWW-Authenticate": "Bearer"})
 
 
@@ -100,16 +97,15 @@ async def update_role(token: Annotated[str, Depends(oauth2_scheme)],
                response_model=None,
                status_code=HTTPStatus.NO_CONTENT,
                description="удаление роли")
-async def delete_role(token: Annotated[str, Depends(oauth2_scheme)],
-                      role_id: str,
-                      cache: AbstractCache = Depends(get_cache_service),
-                      db: AsyncSession = Depends(get_session)):
+async def delete_role(
+        role_id: str,
+        check_token: Annotated[Token, Depends(check_access_token)],
+        db: AsyncSession = Depends(get_session)):
     try:
-        await check_access_token_not_valid(token, cache)
         role = await db.get(Role, role_id)
         if not role:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                                detail=f'Role {role_id} not found',
+                                detail=f'Role with ID: {role_id} not found',
                                 headers={"WWW-Authenticate": "Bearer"})
         await db.delete(role)
         await db.commit()
