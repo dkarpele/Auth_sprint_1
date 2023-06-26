@@ -6,8 +6,12 @@ from core import config
 
 
 class RoleCreate(BaseModel):
-    title: str = Field(..., default=None, description=config.ROLE_TITLE_DESC, min_length=3, max_length=50)
-    permissions: int = None
+    title: str = Field(...,
+                       description=config.ROLE_TITLE_DESC,
+                       min_length=3,
+                       max_length=50)
+    permissions: int = Field(...,
+                             description=config.PERMISSIONS_DESC)
 
 
 class RoleInDB(RoleCreate):

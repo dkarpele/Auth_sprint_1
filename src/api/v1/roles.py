@@ -11,7 +11,7 @@ from services.token import check_access_token_not_valid, oauth2_scheme
 from models.roles import Role
 from db import AbstractCache
 from db.postgres import get_session
-from services.database import get_db_service, get_cache_service
+from services.database import get_cache_service
 from schemas.roles import RoleInDB, RoleCreate
 
 # Объект router, в котором регистрируем обработчики
@@ -64,30 +64,35 @@ async def get_all_roles(token: Annotated[str, Depends(oauth2_scheme)],
               status_code=HTTPStatus.OK,
               description="изменение роли")
 async def update_role(token: Annotated[str, Depends(oauth2_scheme)],
-                      role_id: str, role_create: RoleCreate,
+                      role_id: str,
+                      role_create: RoleCreate,
                       cache: AbstractCache = Depends(get_cache_service),
                       db: AsyncSession = Depends(get_session)) -> RoleInDB:
     try:
         await check_access_token_not_valid(token, cache)
-        role = await db.get(Role, role_id)
-        if role_create.title is not None:
-            async with db:
-                role_exists = await db.execute(
-                    select(Role).filter(Role.title == role_create.title))
+        async with db:
+            role_exists = await db.execute(
+                select(Role).
+                filter(Role.title == role_create.title))
 
-                if role_exists.scalars().all():
-                    raise HTTPException(
-                        status_code=HTTPStatus.UNAUTHORIZED,
-                        detail=f"Role {role.title} already exists"
-                    )
+            if role_exists.scalars().all():
+                raise HTTPException(
+                    status_code=HTTPStatus.UNAUTHORIZED,
+                    detail=f"Role {role_create.title} already exists",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+        role = await db.get(Role, role_id)
+        if role_create.title:
             role.title = role_create.title
-        if role_create.permissions is not None:
+        if role_create.permissions:
             role.permissions = role_create.permissions
         await db.commit()
-        return RoleInDB(id=role.id, title=role.title, permissions=role.permissions)
+        return RoleInDB(id=role.id,
+                        title=role.title,
+                        permissions=role.permissions)
     except DBAPIError:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail=f'Role {role.title} not found',
+                            detail=f'Role {role_id} not found',
                             headers={"WWW-Authenticate": "Bearer"})
 
 
@@ -98,17 +103,17 @@ async def update_role(token: Annotated[str, Depends(oauth2_scheme)],
 async def delete_role(token: Annotated[str, Depends(oauth2_scheme)],
                       role_id: str,
                       cache: AbstractCache = Depends(get_cache_service),
-                      db: AsyncSession = Depends(get_session)) -> RoleInDB:
+                      db: AsyncSession = Depends(get_session)):
     try:
         await check_access_token_not_valid(token, cache)
         role = await db.get(Role, role_id)
-        if role is None:
+        if not role:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                                detail=f'RoleId not found',
+                                detail=f'Role {role_id} not found',
                                 headers={"WWW-Authenticate": "Bearer"})
         await db.delete(role)
         await db.commit()
     except DBAPIError:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
-                            detail=f'Role {role.title} not found',
+                            detail=f'Role {role_id} not found',
                             headers={"WWW-Authenticate": "Bearer"})
