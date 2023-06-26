@@ -46,3 +46,5 @@ FIRST_NAME_DESC = "user's first name"
 LAST_NAME_DESC = "user's last name"
 PASSWORD_DESC = "Password: Minimum eight characters, " \
                 "at least one letter and one number:"
+ROLE_TITLE_DESC = "Roles title"
+PERMISSIONS_DESC = "Permission for the role"
