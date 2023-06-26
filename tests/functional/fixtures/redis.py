@@ -1,31 +1,22 @@
 import pytest_asyncio
-import redis
-
-from tests.functional.settings import settings
 
 
 @pytest_asyncio.fixture(scope='class')
-async def redis_clear_data_before_after():
-    redis_cli = redis.Redis(host=settings.redis_host,
-                            port=settings.redis_port)
-    redis_cli.flushall()
+async def redis_clear_data_before_after(redis_client):
+    redis_client.flushall()
     yield
-    redis_cli.flushall()
+    redis_client.flushall()
 
 
 @pytest_asyncio.fixture(scope='class')
-async def redis_clear_data_after():
-    redis_cli = redis.Redis(host=settings.redis_host,
-                            port=settings.redis_port)
+async def redis_clear_data_after(redis_client):
     yield
-    redis_cli.flushall()
+    redis_client.flushall()
 
 
 @pytest_asyncio.fixture(scope='class')
-async def redis_clear_data_before():
-    redis_cli = redis.Redis(host=settings.redis_host,
-                            port=settings.redis_port)
-    redis_cli.flushall()
+async def redis_clear_data_before(redis_client):
+    redis_client.flushall()
     yield
 
 

@@ -1,10 +1,10 @@
 from redis.asyncio import Redis
 from logging import config as logging_config
 
-from utils.logger import LOGGING
-from settings import settings
+from tests.functional.utils.logger import LOGGING
+from tests.functional.settings import settings
 
-from utils.backoff import backoff, BackoffError
+from tests.functional.utils.backoff import backoff, BackoffError
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)

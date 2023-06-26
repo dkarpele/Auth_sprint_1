@@ -1,6 +1,19 @@
 version: '3'
 
 services:
+  postgres:
+    image: postgres:latest
+    privileged: true
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-db:/data/postgres
+    networks:
+      - backend
+
   fastapi:
     build: ../../src/.
     image: fastapi-image
@@ -13,8 +26,8 @@ services:
     expose:
       - "8000"
     depends_on:
-      - es
       - redis
+      - postgres
     volumes:
       - ./../../tests:/${APP_HOME}/tests
 
@@ -27,24 +40,11 @@ services:
     networks:
       - backend
     depends_on:
-      - es
       - redis
       - fastapi
     entrypoint: ${APP_HOME}/entrypoint.sh
     volumes:
       - ./../../tests:/${APP_HOME}/tests
-
-  es:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
-    container_name: es
-    environment:
-      - "discovery.type=single-node"
-      - "xpack.security.enabled=false"
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    networks:
-      - backend
-    volumes:
-      - es-db:/data/es
 
   redis:
     image: redis:latest
@@ -62,4 +62,4 @@ networks:
   backend:
 
 volumes:
-  es-db:
+  postgres-db:
