@@ -6,7 +6,7 @@ credentials_exception = HTTPException(
             headers={"WWW-Authenticate": "Bearer"},
 )
 
-re_login_exception = HTTPException(
+relogin_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Your credentials expired. Please login again.",
             headers={"WWW-Authenticate": "Bearer"},
