@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.token import check_access_token, Token
+from services.users import check_admin_user
 
 from models.roles import Role
 from db.postgres import get_session
@@ -24,8 +25,8 @@ router = APIRouter()
 async def create_role(
         role_create: RoleCreate,
         check_token: Annotated[Token, Depends(check_access_token)],
+        check_admin: Annotated[bool, Depends(check_admin_user)],
         db: AsyncSession = Depends(get_session)) -> RoleInDB:
-
     role_dto = jsonable_encoder(role_create)
     role = Role(**role_dto)
     async with db:
@@ -50,8 +51,8 @@ async def create_role(
             description="просмотр всех ролей")
 async def get_all_roles(
         check_token: Annotated[Token, Depends(check_access_token)],
+        check_admin: Annotated[bool, Depends(check_admin_user)],
         db: AsyncSession = Depends(get_session)) -> list[RoleInDB]:
-
     response = await db.execute(select(Role))
     roles = list(response.scalars().all())
     return roles
@@ -65,6 +66,7 @@ async def update_role(
         role_id: str,
         role_create: RoleCreate,
         check_token: Annotated[Token, Depends(check_access_token)],
+        check_admin: Annotated[bool, Depends(check_admin_user)],
         db: AsyncSession = Depends(get_session)) -> RoleInDB:
     try:
         async with db:
@@ -100,6 +102,7 @@ async def update_role(
 async def delete_role(
         role_id: str,
         check_token: Annotated[Token, Depends(check_access_token)],
+        check_admin: Annotated[bool, Depends(check_admin_user)],
         db: AsyncSession = Depends(get_session)):
     try:
         role = await db.get(Role, role_id)
