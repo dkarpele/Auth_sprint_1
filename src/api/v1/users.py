@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from http import HTTPStatus
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,15 +10,12 @@ from sqlalchemy.exc import IntegrityError
 from api.v1 import check_entity_exists
 from models.entity import User
 from models.roles import UserRole, Role
-from schemas.entity import UserResponseData, UserLogin, UserRoleInDB
+from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, UserRoleCreate
 from schemas.roles import RoleCreate
 from services.token import check_access_token, get_password_hash, Token
-from services.users import get_current_active_user
+from services.users import get_current_active_user, check_admin_user
 from services.database import get_db_service
-from services.exceptions import entity_doesnt_exist
 
-from src.schemas.entity import UserRoleCreate
-from src.services.users import check_admin_user
 
 router = APIRouter()
 

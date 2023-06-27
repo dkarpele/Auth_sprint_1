@@ -13,7 +13,6 @@ from services.token import check_access_token, Token
 from services.users import check_admin_user
 
 from models.roles import Role
-from db.postgres import get_session
 from schemas.roles import RoleInDB, RoleCreate
 
 # Объект router, в котором регистрируем обработчики
