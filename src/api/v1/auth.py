@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -10,7 +9,7 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.exceptions import wrong_username_or_password
-from services.token import Token, create_token, oauth2_scheme, \
+from services.token import Token, create_token, \
     add_not_valid_access_token_to_cache, check_access_token, \
     refresh_access_token
 from services.users import authenticate_user
@@ -65,12 +64,8 @@ async def login_for_access_token(
     if not user:
         raise wrong_username_or_password
 
-    access_token, token_expire =\
-        await create_token({"sub": str(user.id)}, cache)
-
-    return Token(**{"access_token": access_token,
-                    "token_type": "bearer",
-                    "access_token_expires": token_expire})
+    token_structure = await create_token({"sub": str(user.id)}, cache)
+    return Token(**token_structure)
 
 
 @router.post("/logout",
@@ -86,7 +81,7 @@ async def logout(
              response_model=Token,
              description="получить новую пару access/refresh token",
              status_code=HTTPStatus.OK)
-async def refresh(
-        new_access_token: Annotated[Token, Depends(refresh_access_token)]) \
-        -> Token:
-    return new_access_token
+async def refresh(token: str,
+                  cache: AbstractCache = Depends(get_cache_service)) -> Token:
+    res = await refresh_access_token(token, cache)
+    return res

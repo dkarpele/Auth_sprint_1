@@ -16,7 +16,7 @@ from core.config import settings
 from db import AbstractCache
 from services.database import get_cache_service
 from services.exceptions import credentials_exception, \
-    access_token_invalid_exception, re_login_exception
+    access_token_invalid_exception, relogin_exception
 
 logging_config.dictConfig(LOGGING)
 
@@ -29,8 +29,10 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 7 * 24 * 60  # 7 days
 
 class Token(BaseModel):
     access_token: str
-    token_type: str
     access_token_expires: datetime | int
+    refresh_token: str = None
+    refresh_token_expires: datetime | int = None
+    token_type: str
 
 
 class TokenData(BaseModel):
@@ -50,8 +52,9 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def create_token(data: dict,
-                       cache: AbstractCache = Depends(get_cache_service)):
+async def create_token(
+        data: dict,
+        cache: AbstractCache = Depends(get_cache_service)) -> dict:
     access_token_expires =\
         datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = \
@@ -71,21 +74,18 @@ async def create_token(data: dict,
                                SECRET_KEY_REFRESH,
                                algorithm=ALGORITHM)
 
-    # Put to cache `{access_token}:{refresh_token}` to receive refresh token
-    # when access token was expired. Will be kept in cache for
-    # REFRESH_TOKEN_EXPIRE_MINUTES in seconds.
-    await cache.put_to_cache_by_id(_id=access_token,
-                                   entity=refresh_token,
-                                   expire=int(REFRESH_TOKEN_EXPIRE_MINUTES*60))
-
     # Put to cache `{refresh_token}:{user_id}` to receive user id from refresh
     # token. It will be used later to create access token from user id. Will be
     # kept in cache for REFRESH_TOKEN_EXPIRE_MINUTES in seconds.
-    # await cache.put_to_cache_by_id(_id=refresh_token,
-    #                                entity=to_encode['sub'],
-    #                                expire=int(REFRESH_TOKEN_EXPIRE_MINUTES*60))
+    await cache.put_to_cache_by_id(_id=refresh_token,
+                                   entity=to_encode['sub'],
+                                   expire=int(REFRESH_TOKEN_EXPIRE_MINUTES*60))
 
-    return access_token, access_token_expires
+    return {'access_token': access_token,
+            'refresh_token': refresh_token,
+            'access_token_expires': access_token_expires,
+            'refresh_token_expires': refresh_token_expires,
+            "token_type": "bearer"}
 
 
 async def decode_token(token: str, key: str) -> tuple[str, str]:
@@ -129,36 +129,35 @@ async def check_access_token(
 
 
 async def refresh_access_token(
-        token: Annotated[str, Depends(oauth2_scheme)],
-        cache: AbstractCache = Depends(get_cache_service),):
+        refresh_token: str,
+        cache: AbstractCache):
     """
     Обновляет access token по refresh token
-    :param token:
+    :param refresh_token: refresh token
     :param cache: подключение к DB
     :return:
     """
-    # take refresh token from access token from cache
-    refresh_token = await cache.get_from_cache_by_id(_id=token)
+    # If refresh token is invalid - exit immediately
+    try:
+        jwt.decode(refresh_token, SECRET_KEY_REFRESH, algorithms=[ALGORITHM])
+    except JWTError:
+        raise relogin_exception
+
+    # check id from refresh token exists in cache
+    user_id = await cache.get_from_cache_by_id(_id=refresh_token)
 
     # If it doesn't exist then refresh token was expired or user never logged
-    # in
-    if not refresh_token:
-        raise re_login_exception
+    # in or refresh token has already been used
+    if not user_id:
+        raise relogin_exception
 
-    # remove access-token key from cache, we will create new pair
-    await cache.delete_from_cache_by_id(_id=token)
-
-    # take user id from refresh token
-    user_id, cache_expire = await decode_token(refresh_token,
-                                               SECRET_KEY_REFRESH)
+    # remove refresh-token:user_id from cache, we will create new pair
+    await cache.delete_from_cache_by_id(_id=refresh_token)
 
     # create a new pair of tokens using id
-    access_token, access_token_expires = \
-        await create_token({"sub": str(user_id)}, cache)
+    token_structure = await create_token({"sub": str(user_id, 'utf-8')}, cache)
 
-    return Token(**{"access_token": access_token,
-                    "token_type": "bearer",
-                    "access_token_expires": access_token_expires})
+    return Token(**token_structure)
 
 
 async def add_not_valid_access_token_to_cache(
@@ -172,6 +171,7 @@ async def add_not_valid_access_token_to_cache(
     :return:
     """
     sub, cache_expire = await decode_token(token.access_token, SECRET_KEY)
-    await cache.put_to_cache_by_id(_id=f'invalid-access-token:{token}',
-                                   entity=sub,
-                                   expire=cache_expire)
+    await cache.put_to_cache_by_id(
+                            _id=f'invalid-access-token:{token.access_token}',
+                            entity=sub,
+                            expire=cache_expire)
