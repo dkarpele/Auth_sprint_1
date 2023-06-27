@@ -1,4 +1,7 @@
 import logging
+from asyncio import sleep
+
+import aiohttp
 import pytest
 
 from http import HTTPStatus
@@ -89,8 +92,10 @@ class TestSignup:
                  "password": "supersecret"
                  },
                 {'status': HTTPStatus.UNPROCESSABLE_ENTITY,
-                 'msg_first_name': 'ensure this value has at least 3 characters',
-                 'msg_last_name': 'ensure this value has at most 50 characters',
+                 'msg_first_name': 'ensure this value has at least 3 '
+                                   'characters',
+                 'msg_last_name': 'ensure this value has at most 50 '
+                                  'characters',
                  'msg_email': 'value is not a valid email address',
                  'msg_password': 'string does not match regex'},
             ),
@@ -190,17 +195,29 @@ class TestLogout:
         ]
     )
     async def test_logout_user(self,
-                               session_client,
-                               get_access_token,
+                               get_token,
                                payload,
                                expected_answer):
         url = settings.service_url + PREFIX + self.postfix
-        access_token = await get_access_token(payload)
-        async with session_client.post(url) as response:
-            body = await response.json()
+        global access_token
+        access_token = await get_token(payload)
+        header = {'Authorization': f'Bearer {access_token}'}
 
-            assert response.status == expected_answer['status']
-            assert body['detail'] == expected_answer['detail']
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.post(url) as response:
+                assert response.status == expected_answer['status']
+
+    async def test_logout_user_the_same_token(self):
+        url = settings.service_url + PREFIX + self.postfix
+        try:
+            header = {'Authorization': f'Bearer {access_token}'}
+        except NameError:
+            logging.error(f"Can't run the test with unknown access_token")
+            assert False
+
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.post(url) as response:
+                assert response.status == HTTPStatus.UNAUTHORIZED
 
     @pytest.mark.parametrize(
         'expected_answer',
@@ -219,3 +236,39 @@ class TestLogout:
 
             assert response.status == expected_answer['status']
             assert body['detail'] == expected_answer['detail']
+
+
+@pytest.mark.usefixtures('redis_clear_data_before_after',
+                         'pg_write_data')
+class TestRefresh:
+    postfix = '/refresh'
+
+    @pytest.mark.parametrize(
+        'payload, expected_answer',
+        [
+            (
+                    {"username": "user-0@example.com",
+                     "password": "Secret123"},
+                    {'status': HTTPStatus.OK}
+             ),
+        ]
+    )
+    async def test_refresh_tokens(self,
+                                  session_client,
+                                  get_token,
+                                  payload,
+                                  expected_answer):
+
+        refresh_token = await get_token(payload, 'refresh')
+        url = settings.service_url + PREFIX + self.postfix \
+                                            + f'?token={refresh_token}'
+        # Without sleep tokens will be created at exactly the same time and
+        # will be equal.
+        await sleep(1)
+        async with session_client.post(url) as response:
+            body = await response.json()
+
+            assert response.status == expected_answer['status']
+            assert body['refresh_token'] != refresh_token
+            assert 'access_token' in body.keys()
+            assert 'access_token_expires' in body.keys()

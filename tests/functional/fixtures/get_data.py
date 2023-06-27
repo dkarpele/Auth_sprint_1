@@ -7,10 +7,10 @@ from src.models.entity import User
 
 @pytest_asyncio.fixture(scope='function')
 async def select_row(pg_client):
-    async def inner(_id: str):
+    async def inner(_id: str, model=User, column=User.id):
         user = await pg_client.execute(
-            select(User).
-            filter(User.id == _id)
+            select(model).
+            where(column == _id)
         )
         await pg_client.commit()
         return user.scalars().all()
@@ -18,8 +18,8 @@ async def select_row(pg_client):
 
 
 @pytest_asyncio.fixture(scope='function')
-async def get_access_token(session_client):
-    async def inner(payload: dict):
+async def get_token(session_client):
+    async def inner(payload: dict, token_type: str = 'access'):
         prefix = '/api/v1/auth'
         postfix = '/login'
 
@@ -27,5 +27,9 @@ async def get_access_token(session_client):
 
         async with session_client.post(url, data=payload) as response:
             body = await response.json()
-            return body['access_token']
+            if token_type == 'access':
+                return body['access_token']
+            if token_type == 'refresh':
+                return body['refresh_token']
+
     yield inner

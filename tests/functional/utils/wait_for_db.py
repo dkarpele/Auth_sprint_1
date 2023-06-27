@@ -20,4 +20,3 @@ async def wait_postgres():
     if not postgres.get_session():
         raise BackoffError()
     await postgres.postgres.create_database()
-

@@ -18,5 +18,3 @@ async def redis_clear_data_after(redis_client):
 async def redis_clear_data_before(redis_client):
     redis_client.flushall()
     yield
-
-

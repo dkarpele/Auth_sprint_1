@@ -2,11 +2,9 @@ import aiohttp
 import asyncio
 import redis
 import pytest_asyncio
-from sqlalchemy.future import select
 
 from tests.functional.settings import settings, database_dsn
 from src.db import postgres
-from src.models.entity import User
 
 pytest_plugins = ("tests.functional.fixtures.get_data",
                   "tests.functional.fixtures.redis",
@@ -31,7 +29,6 @@ async def pg_client():
     async with postgres.postgres.async_session() as session:
         await postgres.postgres.create_database()
         yield session
-        await postgres.postgres.purge_database()
         await postgres.postgres.close()
 
 

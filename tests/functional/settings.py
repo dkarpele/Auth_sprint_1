@@ -37,4 +37,3 @@ class DBCreds(BaseSettings):
 
 
 database_dsn = DBCreds()
-
