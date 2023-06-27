@@ -137,6 +137,12 @@ async def refresh_access_token(
     :param cache: подключение к DB
     :return:
     """
+    # If refresh token is invalid - exit immediately
+    try:
+        jwt.decode(refresh_token, SECRET_KEY_REFRESH, algorithms=[ALGORITHM])
+    except JWTError:
+        raise relogin_exception
+
     # check id from refresh token exists in cache
     user_id = await cache.get_from_cache_by_id(_id=refresh_token)
 
