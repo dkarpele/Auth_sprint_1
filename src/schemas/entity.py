@@ -46,3 +46,11 @@ class UserInDB(UserEmail, UserData):
     # It's a hashed password
     hashed_password: str = Field(..., alias="password")
 
+
+class UserRoleCreate(BaseModel):
+    user_id: UUID
+    role_id: UUID
+
+
+class UserRoleInDB(UserRoleCreate):
+    id: UUID
