@@ -1,17 +1,18 @@
 import logging
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from services.token import verify_password, TokenData, \
-    SECRET_KEY, decode_token, check_access_token, Token, oauth2_scheme
+    SECRET_KEY, decode_token, oauth2_scheme
 from services.exceptions import credentials_exception
 from db.postgres import get_session
 from models.entity import User
+from models.roles import UserRole, Role
 from schemas.entity import UserInDB
 
 
@@ -47,7 +48,7 @@ async def authenticate_user(username: str,
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
                            db: AsyncSession = Depends(get_session)):
-    _id, cache_expire = await decode_token(token, SECRET_KEY)
+    _id, _ = await decode_token(token, SECRET_KEY)
     token_data = TokenData(id=_id)
     user = await get_user(_id=token_data.id, db=db)
     if user is None:
@@ -56,9 +57,42 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+        current_user: Annotated[User, Depends(get_current_user)]
 ):
     if current_user.disabled:
-        raise HTTPException(status_code=400,
-                            detail="Inactive user")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Inactive user",
+                            headers={"WWW-Authenticate": "Bearer"})
     return current_user
+
+
+async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
+                           db: AsyncSession = Depends(get_session)):
+    try:
+        user_id, _ = await decode_token(token, SECRET_KEY)
+
+        roles_exists = await db.execute(
+            select(UserRole).
+            filter(UserRole.user_id == user_id)
+        )
+        all_roles = [row.role_id for row in roles_exists.scalars().all()]
+        permissions = 0
+        for r_id in all_roles:
+            response = await db.execute(select(Role).filter(Role.id == r_id))
+            role = response.scalars().all()[0]
+            if role.permissions > permissions:
+                permissions = role.permissions
+        admin = await db.execute(
+            select(Role).
+            filter(Role.title == 'admin')
+        )
+        if admin.scalars().all()[0].permissions <= permissions:
+            return True
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You don't have permission to access on "
+                                   "this server.",
+                            headers={"WWW-Authenticate": "Bearer"})
+    except IndexError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Role admin not found.",
+                            headers={"WWW-Authenticate": "Bearer"})
