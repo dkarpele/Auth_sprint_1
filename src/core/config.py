@@ -9,13 +9,13 @@ logging_config.dictConfig(LOGGING)
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = Field(..., env='PROJECT_NAME')
-    REDIS_HOST: str = Field(..., env='REDIS_HOST')
-    REDIS_PORT: int = Field(..., env='REDIS_PORT')
-    HOST: str = Field(..., env='HOST')
-    PORT: int = Field(..., env='PORT')
-    SECRET_KEY: str = Field(..., env='SECRET_KEY')
-    SECRET_KEY_REFRESH: str = Field(..., env='SECRET_KEY')
+    project_name: str = Field(..., env='PROJECT_NAME')
+    redis_host: str = Field(..., env='REDIS_HOST')
+    redis_port: int = Field(..., env='REDIS_PORT')
+    host: str = Field(..., env='HOST')
+    port: int = Field(..., env='PORT')
+    secret_key: str = Field(..., env='SECRET_KEY')
+    secret_key_refresh: str = Field(..., env='SECRET_KEY_REFRESH')
 
     class Config:
         env_file = '.env'

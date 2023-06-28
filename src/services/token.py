@@ -20,8 +20,8 @@ from services.exceptions import credentials_exception, \
 
 logging_config.dictConfig(LOGGING)
 
-SECRET_KEY = settings.SECRET_KEY
-SECRET_KEY_REFRESH = settings.SECRET_KEY_REFRESH
+SECRET_KEY = settings.secret_key
+SECRET_KEY_REFRESH = settings.secret_key_refresh
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_MINUTES = 7 * 24 * 60  # 7 days
