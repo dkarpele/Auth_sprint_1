@@ -1,16 +1,12 @@
-from typing import Annotated
-from fastapi.encoders import jsonable_encoder
-
 from http import HTTPStatus
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.exc import DBAPIError
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1 import check_entity_exists
-from services.database import get_db_service
-from services.token import check_access_token, Token
-from services.users import check_admin_user
+from api.v1 import check_entity_exists, DbDep
+
 
 from models.roles import Role
 from schemas.roles import RoleInDB, RoleCreate
@@ -24,11 +20,7 @@ router = APIRouter()
              status_code=HTTPStatus.CREATED,
              description="создание новой роли",
              response_description="id, title, permissions")
-async def create_role(
-        role_create: RoleCreate,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> RoleInDB:
+async def create_role(role_create: RoleCreate, db: DbDep) -> RoleInDB:
     role_dto = jsonable_encoder(role_create)
     role = Role(**role_dto)
     async with db:
@@ -51,10 +43,7 @@ async def create_role(
             response_model=list[RoleInDB],
             status_code=HTTPStatus.OK,
             description="просмотр всех ролей")
-async def get_all_roles(
-        check_token: Annotated[Token, Depends(check_access_token)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> list[RoleInDB]:
+async def get_all_roles(db: DbDep) -> list[RoleInDB]:
     response = await db.execute(select(Role))
     roles = list(response.scalars().all())
     return roles
@@ -64,12 +53,9 @@ async def get_all_roles(
               response_model=RoleInDB,
               status_code=HTTPStatus.OK,
               description="изменение роли")
-async def update_role(
-        role_id: str,
-        role_create: RoleCreate,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> RoleInDB:
+async def update_role(role_id: str,
+                      role_create: RoleCreate,
+                      db: DbDep) -> RoleInDB:
     try:
         async with db:
             await check_entity_exists(db, Role, role_id)
@@ -103,11 +89,7 @@ async def update_role(
                response_model=None,
                status_code=HTTPStatus.NO_CONTENT,
                description="удаление роли")
-async def delete_role(
-        role_id: str,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)):
+async def delete_role(role_id: str, db: DbDep):
     try:
         role = await check_entity_exists(db, Role, role_id)
 

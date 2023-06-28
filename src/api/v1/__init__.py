@@ -1,7 +1,21 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from typing import Annotated
 
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db import AbstractCache
+from models.entity import User
+from services.database import get_db_service, get_cache_service
 from services.exceptions import entity_doesnt_exist
+from services.token import Token, check_access_token
+from services.users import get_current_active_user, check_admin_user
+
+
+DbDep = Annotated[AsyncSession, Depends(get_db_service)]
+CacheDep = Annotated[AbstractCache, Depends(get_cache_service)]
+TokenDep = Annotated[Token, Depends(check_access_token)]
+CurrentUserDep = Annotated[User, Depends(get_current_active_user)]
+CheckAdminDep = Annotated[bool, Depends(check_admin_user)]
 
 
 async def _get_cache_key(args_dict: dict = None,

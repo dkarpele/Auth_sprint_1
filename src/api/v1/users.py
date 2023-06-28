@@ -1,20 +1,16 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
-from api.v1 import check_entity_exists
+from api.v1 import check_entity_exists, DbDep, CurrentUserDep, CheckAdminDep
 from models.entity import User
 from models.roles import UserRole, Role
-from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, UserRoleCreate
+from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
+    UserRoleCreate
 from schemas.roles import RoleCreate
-from services.token import check_access_token, get_password_hash, Token
-from services.users import get_current_active_user, check_admin_user
-from services.database import get_db_service
+from services.token import get_password_hash
 
 
 router = APIRouter()
@@ -24,10 +20,7 @@ router = APIRouter()
             description="Вся информация о пользователе",
             response_model=UserResponseData,
             status_code=status.HTTP_200_OK)
-async def read_users_me(
-        check_token: Annotated[Token, Depends(check_access_token)],
-        current_user: Annotated[User, Depends(get_current_active_user)],
-) -> UserResponseData:
+async def read_users_me(current_user: CurrentUserDep) -> UserResponseData:
     return current_user
 
 
@@ -37,9 +30,8 @@ async def read_users_me(
               status_code=status.HTTP_200_OK)
 async def change_login_password(
         new_login: UserLogin,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        db: AsyncSession = Depends(get_db_service)) -> UserResponseData:
+        current_user: CurrentUserDep,
+        db: DbDep) -> UserResponseData:
     async with db:
         user_exists = await db.execute(
             select(User).
@@ -69,12 +61,9 @@ async def change_login_password(
              description="Добавить роль для пользователя",
              response_model=UserRoleInDB,
              status_code=status.HTTP_201_CREATED)
-async def add_role(
-        user_role: UserRoleCreate,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> UserRoleInDB:
+async def add_role(user_role: UserRoleCreate,
+                   check_admin: CheckAdminDep,
+                   db: DbDep) -> UserRoleInDB:
     try:
 
         async with db:
@@ -112,12 +101,9 @@ async def add_role(
                description="Удалить роль у пользователя",
                response_model=None,
                status_code=status.HTTP_204_NO_CONTENT)
-async def delete_role(
-        user_role: UserRoleCreate,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> None:
+async def delete_role(user_role: UserRoleCreate,
+                      check_admin: CheckAdminDep,
+                      db: DbDep) -> None:
     async with db:
         await check_entity_exists(db, User, user_role.user_id)
         await check_entity_exists(db, Role, user_role.role_id)
@@ -144,11 +130,9 @@ async def delete_role(
             response_model=list[RoleCreate],
             status_code=status.HTTP_200_OK,
             description="просмотр всех ролей пользователя")
-async def get_all_roles(
-        user_id: str,
-        check_token: Annotated[Token, Depends(check_access_token)],
-        check_admin: Annotated[bool, Depends(check_admin_user)],
-        db: AsyncSession = Depends(get_db_service)) -> list[RoleCreate]:
+async def get_all_roles(user_id: str,
+                        check_admin: CheckAdminDep,
+                        db: DbDep) -> list[RoleCreate]:
     async with db:
         await check_entity_exists(db, User, user_id)
 
@@ -163,7 +147,7 @@ async def get_all_roles(
                 select(Role).
                 filter(Role.id == r_id)
             )
-            role = response.scalars().all()[0]
+            role = response.scalars().first()
             roles.append(RoleCreate(title=role.title,
                                     permissions=role.permissions))
         return roles

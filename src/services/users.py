@@ -79,14 +79,14 @@ async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
         permissions = 0
         for r_id in all_roles:
             response = await db.execute(select(Role).filter(Role.id == r_id))
-            role = response.scalars().all()[0]
+            role = response.scalars().first()
             if role.permissions > permissions:
                 permissions = role.permissions
         admin = await db.execute(
             select(Role).
             filter(Role.title == 'admin')
         )
-        if admin.scalars().all()[0].permissions <= permissions:
+        if admin.scalars().first().permissions <= permissions:
             return True
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="You don't have permission to access on "
