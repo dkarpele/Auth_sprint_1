@@ -23,6 +23,16 @@ pyhton3 src/create_admin.py
 2. Create ```.env``` file according to ```.env.example```.
 3. Launch the project ```docker-compose up```.
 
+
+## Development
+1. Clone [repo](https://github.com/dkarpele/Auth_sprint_1).
+2. Create ```.env``` file according to ```.env.example```.
+3. Launch the project ```docker-compose up postgres redis```.
+4. Apply migrations ```alembic upgrade head```
+5. Create admin user
+6. Launch the server from _/src_: ```python3 main.py``` 
+
+
 ## Testing
 
 1. Go to `/tests/functional`

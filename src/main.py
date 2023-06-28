@@ -23,12 +23,10 @@ async def startup():
                       f'{database_dsn.host}:{database_dsn.port}/'
                       f'{database_dsn.dbname}')
     postgres.get_session()
-    await postgres.postgres.create_database()
 
 
 async def shutdown():
     await redis.redis.close()
-    # await postgres.postgres.purge_database()
     await postgres.postgres.close()
 
 
