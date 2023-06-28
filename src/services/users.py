@@ -1,5 +1,6 @@
 import logging
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
@@ -13,6 +14,7 @@ from services.exceptions import credentials_exception
 from db.postgres import get_session
 from models.entity import User
 from models.roles import UserRole, Role
+from models.history import LoginHistory
 from schemas.entity import UserInDB
 
 
@@ -96,3 +98,12 @@ async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Role admin not found.",
                             headers={"WWW-Authenticate": "Bearer"})
+
+
+async def add_history(user_id: UUID,
+                      source: str = None,
+                      db: AsyncSession = Depends(get_session)) -> None:
+    history = LoginHistory(user_id, source)
+    db.add(history)
+    await db.commit()
+    await db.refresh(history)

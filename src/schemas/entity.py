@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, constr
@@ -54,3 +55,9 @@ class UserRoleCreate(BaseModel):
 
 class UserRoleInDB(UserRoleCreate):
     id: UUID
+
+
+class UserHistory(BaseModel):
+    user_id: UUID
+    source: str = None
+    login_time: datetime
