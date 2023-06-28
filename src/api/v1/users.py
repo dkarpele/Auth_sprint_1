@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -9,7 +8,8 @@ from api.v1 import check_entity_exists, DbDep, CurrentUserDep, CheckAdminDep
 from models.entity import User
 from models.history import LoginHistory
 from models.roles import UserRole, Role
-from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, UserRoleCreate, UserHistory
+from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
+    UserRoleCreate, UserHistory
 from schemas.roles import RoleCreate
 from services.token import get_password_hash
 
@@ -62,17 +62,17 @@ async def change_login_password(
             description="История пользователя",
             response_model=list[UserHistory],
             status_code=status.HTTP_200_OK)
-async def get_login_history(
-        check_token: Annotated[Token, Depends(check_access_token)],
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        db: AsyncSession = Depends(get_db_service)) -> list[UserHistory]:
+async def get_login_history(current_user: CurrentUserDep,
+                            db: DbDep) -> list[UserHistory]:
+
     history_exists = await db.execute(
         select(LoginHistory).
         filter(LoginHistory.user_id == current_user.id)
     )
     history = history_exists.scalars().all()
-    print([UserHistory(user_id=h.user_id, source=h.source, login_time=h.login_time) for h in history])
-    return [UserHistory(user_id=h.user_id, source=h.source, login_time=h.login_time) for h in history]
+    return [UserHistory(user_id=h.user_id,
+                        source=h.source,
+                        login_time=h.login_time) for h in history]
 
 
 @router.post("/add-role",
