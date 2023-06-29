@@ -6,12 +6,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
 
-from api.v1 import DbDep, CacheDep, TokenDep
+from services.database import DbDep, CacheDep
 from models.entity import User
 from schemas.entity import UserSignUp, UserResponseData
 from services.exceptions import wrong_username_or_password
 from services.token import Token, create_token, \
-    add_not_valid_access_token_to_cache,  refresh_access_token
+    add_not_valid_access_token_to_cache, refresh_access_token, TokenDep
 from services.users import authenticate_user, add_history
 # Объект router, в котором регистрируем обработчики
 router = APIRouter()
@@ -56,7 +56,9 @@ async def login_for_access_token(
     user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise wrong_username_or_password
-    await add_history(user.id, None, db=db)
+
+    await add_history(db=db, user_id=user.id)
+
     token_structure = await create_token({"sub": str(user.id)}, cache)
     return Token(**token_structure)
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from core.config import settings
 from db import AbstractCache
-from services.database import get_cache_service
+from services.database import CacheDep
 from services.exceptions import credentials_exception, \
     access_token_invalid_exception, relogin_exception
 
@@ -52,9 +52,7 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def create_token(
-        data: dict,
-        cache: AbstractCache = Depends(get_cache_service)) -> dict:
+async def create_token(data: dict, cache: CacheDep) -> dict:
     access_token_expires =\
         datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = \
@@ -103,7 +101,7 @@ async def decode_token(token: str, key: str) -> tuple[str, str]:
 
 async def check_access_token(
         token: Annotated[str, Depends(oauth2_scheme)],
-        cache: AbstractCache = Depends(get_cache_service),):
+        cache: CacheDep):
     """
     Проверяет есть ли недействительный access-token в cache
     :param token:
@@ -175,3 +173,6 @@ async def add_not_valid_access_token_to_cache(
                             _id=f'invalid-access-token:{token.access_token}',
                             entity=sub,
                             expire=cache_expire)
+
+
+TokenDep = Annotated[Token, Depends(check_access_token)]

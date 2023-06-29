@@ -1,13 +1,12 @@
 import orjson
 
-# Используем pydantic для упрощения работы при перегонке данных из json в
-# объекты
+from fastapi import Query
 from pydantic import BaseModel
+
+import src.core.config as conf
 
 
 def orjson_dumps(v, *, default):
-    # orjson.dumps возвращает bytes, а pydantic требует unicode, поэтому
-    # декодируем
     return orjson.dumps(v, default=default).decode()
 
 
@@ -23,3 +22,17 @@ class TokenCache(Model):
     token: str
     data: str
 
+
+class PaginateModel:
+    def __init__(self,
+                 page_number: int = Query(1,
+                                          description=conf.PAGE_DESC,
+                                          ge=1,
+                                          le=10000),
+                 page_size: int = Query(50,
+                                        description=conf.SIZE_DESC,
+                                        ge=1,
+                                        le=500),
+                 ):
+        self.page_number = page_number
+        self.page_size = page_size

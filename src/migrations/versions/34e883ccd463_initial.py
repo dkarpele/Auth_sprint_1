@@ -47,7 +47,7 @@ def upgrade() -> None:
     )
 
     op.create_table(
-        'login_history',
+        'logins_history',
         LoginHistory.id.expression,
         LoginHistory.user_id.expression,
         LoginHistory.source.expression,
@@ -60,4 +60,4 @@ def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('roles')
     op.drop_table('users_roles')
-    op.drop_table('login_history')
+    op.drop_table('logins_history')

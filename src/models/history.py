@@ -10,7 +10,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class LoginHistory(Base):
-    __tablename__ = 'login_history'
+    __tablename__ = 'logins_history'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
                 unique=True, nullable=False)
@@ -23,9 +23,7 @@ class LoginHistory(Base):
 
     def __init__(self,
                  user_id: UUID,
-                 source: str = None,
-                 login_time: datetime = datetime.now()) -> None:
+                 source: str = None) -> None:
         self.user_id = user_id
         self.source = source
-        self.login_time = login_time
-
+        self.login_time = self.login_time
