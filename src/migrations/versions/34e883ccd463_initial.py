@@ -9,6 +9,7 @@ from alembic import op
 
 from models.entity import User
 from models.roles import Role, UserRole
+from models.history import LoginHistory
 
 # revision identifiers, used by Alembic.
 revision = '34e883ccd463'
@@ -45,8 +46,18 @@ def upgrade() -> None:
         UserRole.user_role_idx
     )
 
+    op.create_table(
+        'login_history',
+        LoginHistory.id.expression,
+        LoginHistory.user_id.expression,
+        LoginHistory.source.expression,
+        LoginHistory.login_time.expression,
+        LoginHistory.created_at.expression
+    )
+
 
 def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('roles')
     op.drop_table('users_roles')
+    op.drop_table('login_history')

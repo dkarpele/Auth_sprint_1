@@ -13,7 +13,6 @@ from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
 from schemas.roles import RoleCreate
 from services.token import get_password_hash
 
-
 router = APIRouter()
 
 
@@ -63,11 +62,15 @@ async def change_login_password(
             response_model=list[UserHistory],
             status_code=status.HTTP_200_OK)
 async def get_login_history(current_user: CurrentUserDep,
-                            db: DbDep) -> list[UserHistory]:
-
+                            db: DbDep,
+                            page: int = 1,
+                            page_size: int = 10) -> list[UserHistory]:
     history_exists = await db.execute(
         select(LoginHistory).
-        filter(LoginHistory.user_id == current_user.id)
+        filter(LoginHistory.user_id == current_user.id).
+        order_by(LoginHistory.login_time.desc()).
+        offset((page - 1) * page_size).
+        limit(page_size)
     )
     history = history_exists.scalars().all()
     return [UserHistory(user_id=h.user_id,

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -102,8 +103,9 @@ async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
 
 async def add_history(user_id: UUID,
                       source: str = None,
+                      login_time: datetime = datetime.now(),
                       db: AsyncSession = Depends(get_session)) -> None:
-    history = LoginHistory(user_id, source)
+    history = LoginHistory(user_id, source, login_time)
     db.add(history)
     await db.commit()
     await db.refresh(history)

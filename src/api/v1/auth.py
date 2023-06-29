@@ -56,7 +56,7 @@ async def login_for_access_token(
     user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise wrong_username_or_password
-    await add_history(user.id, None, db)
+    await add_history(user.id, None, db=db)
     token_structure = await create_token({"sub": str(user.id)}, cache)
     return Token(**token_structure)
 
