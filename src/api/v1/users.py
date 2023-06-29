@@ -6,9 +6,10 @@ from sqlalchemy.exc import IntegrityError
 
 from api.v1 import check_entity_exists, DbDep, CurrentUserDep, CheckAdminDep
 from models.entity import User
+from models.history import LoginHistory
 from models.roles import UserRole, Role
 from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
-    UserRoleCreate
+    UserRoleCreate, UserHistory
 from schemas.roles import RoleCreate
 from services.token import get_password_hash
 
@@ -55,6 +56,23 @@ async def change_login_password(
         new_user = new_user.scalars().all()
         if new_user:
             return UserResponseData(**jsonable_encoder(new_user[0]))
+
+
+@router.get("/login-history",
+            description="История пользователя",
+            response_model=list[UserHistory],
+            status_code=status.HTTP_200_OK)
+async def get_login_history(current_user: CurrentUserDep,
+                            db: DbDep) -> list[UserHistory]:
+
+    history_exists = await db.execute(
+        select(LoginHistory).
+        filter(LoginHistory.user_id == current_user.id)
+    )
+    history = history_exists.scalars().all()
+    return [UserHistory(user_id=h.user_id,
+                        source=h.source,
+                        login_time=h.login_time) for h in history]
 
 
 @router.post("/add-role",

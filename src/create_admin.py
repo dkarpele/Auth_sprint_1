@@ -22,24 +22,33 @@ async def main():
             f'{database_dsn.user}:{database_dsn.password}@'
             f'{database_dsn.host}:{database_dsn.port}/'
             f'{database_dsn.dbname}')
-        async with db.engine.begin() as session:
+
+        user_data = UserSignUp(email=os.environ.get('ADMIN_EMAIL',
+                                                    'admin@example.com'),
+                               password=os.environ.get('ADMIN_PASSWORD',
+                                                       'Secret123'),
+                               first_name='admin',
+                               last_name='admin',)
+        async with db.async_session() as session:
             admin = await session.execute(
                 select(Role).
                 filter(Role.title == 'admin')
             )
-            if not admin.scalars().all():
-                data = []
-                data.append(Role('admin', 7))
-                data.append(User(**jsonable_encoder(
-                    UserSignUp(email=os.environ.get('ADMIN_EMAIL', 'admin@example.com'),
-                               first_name=os.environ.get('ADMIN_PASSWORD', 'Secret123'),
-                               last_name='admin',
-                               password='admin'))))
-                data.append(UserRole(data[0].id, data[1].id))
+            if not admin.scalars().first():
+                data = [User(**jsonable_encoder(user_data)),
+                        Role('admin', 7)]
                 for el in data:
-                    db.add(el)
-                    await db.commit()
-                    await db.refresh(el)
+                    session.add(el)
+                    await session.commit()
+                    await session.refresh(el)
+
+                user_role = UserRole(user_id=data[0].id,
+                                     role_id=data[1].id)
+                session.add(user_role)
+                await session.commit()
+                await session.refresh(user_role)
+            else:
+                logging.info('Admin already exists. Nothing to do.')
     except ConnectionRefusedError:
         logging.error("Нет подключения к БД")
 

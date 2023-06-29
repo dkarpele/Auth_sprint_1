@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, constr
@@ -27,7 +28,7 @@ class UserData(BaseModel):
                            min_length=3,
                            max_length=50)
     disabled: bool = Field(default=False,
-                           description="True - active, False - inactive")
+                           description="True - inactive, False - active")
 
 
 class UserSignUp(UserLogin, UserData):
@@ -54,3 +55,9 @@ class UserRoleCreate(BaseModel):
 
 class UserRoleInDB(UserRoleCreate):
     id: UUID
+
+
+class UserHistory(BaseModel):
+    user_id: UUID
+    source: str = None
+    login_time: datetime
