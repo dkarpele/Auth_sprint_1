@@ -1,9 +1,9 @@
 from logging import config as logging_config
 
-from tests.functional.utils.logger import LOGGING
-from tests.functional.settings import database_dsn
+from utils.logger import LOGGING
+from settings import database_dsn
 
-from tests.functional.utils.backoff import backoff, BackoffError
+from utils.backoff import backoff, BackoffError
 from src.db import postgres
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)

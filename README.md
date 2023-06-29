@@ -21,15 +21,15 @@ pyhton3 src/create_admin.py
 
 1. Clone [repo](https://github.com/dkarpele/Auth_sprint_1).
 2. Create ```.env``` file according to ```.env.example```.
-3. Launch the project ```docker-compose up```.
+3. Launch the project ```docker-compose up --build```.
 
 
 ## Development
 1. Clone [repo](https://github.com/dkarpele/Auth_sprint_1).
 2. Create ```.env``` file according to ```.env.example```.
 3. Launch the project ```docker-compose up postgres redis```.
-4. Apply migrations ```alembic upgrade head```
-5. Create admin user
+4. Apply migrations ```cd src ; alembic upgrade head```
+5. Create admin user ```python3 create-admin.py```
 6. Launch the server from _/src_: ```python3 main.py``` 
 
 
@@ -37,15 +37,17 @@ pyhton3 src/create_admin.py
 
 1. Go to `/tests/functional`
 2. Create ```.env``` file according to ```.env.example```.
-3. Launch the project ```docker-compose up```.
+3. Launch the project ```docker-compose up --build```.
+
 
 ## API calls
+
 auth
 
 - POST http://127.0.0.1/api/v1/auth/signup - create new account
 - POST http://127.0.0.1/api/v1/auth/login - login
 - POST http://127.0.0.1/api/v1/auth/logout - logout (must be authorised)
-- POST://127.0.0.1/api/v1/auth/refresh - receive new pair of tokens
+- POST http://127.0.0.1/api/v1/auth/refresh - receive a new pair of tokens
 
 roles:
 (only for _admin_ role, must be authorised)
@@ -61,6 +63,7 @@ users:
 - GET http://127.0.0.1/api/v1/users/roles - list all roles for current user (only for _admin_ role)
 - GET http://127.0.0.1/api/v1/users/me - get all data about current user (must be authorised)
 - POST http://127.0.0.1/api/v1/users/change-login-password - change user's login/password (must be authorised)
+- GET http://127.0.0.1/api/v1/users/login-history - list user's login history (must be authorised)
 
 
 ## Authors
