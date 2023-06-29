@@ -9,6 +9,8 @@ from logging import config as logging_config
 
 from tests.functional.settings import settings
 from tests.functional.utils.logger import LOGGING
+from src.models.history import LoginHistory
+from src.models.entity import User
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
@@ -135,17 +137,23 @@ class TestLogin:
     )
     async def test_login_user(self,
                               session_client,
+                              select_row,
                               payload,
                               expected_answer):
         url = settings.service_url + PREFIX + self.postfix
 
         async with session_client.post(url, data=payload) as response:
             body = await response.json()
-
+            user = await select_row(payload['username'], User, User.email)
+            logins_history = await select_row(user[0].id,
+                                              LoginHistory,
+                                              LoginHistory.user_id)
             assert response.status == expected_answer['status']
             assert 'access_token' in body.keys()
             assert 'access_token_expires' in body.keys()
             assert body['token_type'] == "bearer"
+
+            assert logins_history[0].login_time
 
     @pytest.mark.parametrize(
         'payload, expected_answer',

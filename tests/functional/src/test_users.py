@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import aiohttp
 import pytest
 
@@ -215,3 +217,41 @@ class TestGetRoles:
                 body = await response.json()
                 assert body[0]['permissions'] == expected_answer['permissions']
                 assert body[0]['title'] == expected_answer['title']
+
+
+@pytest.mark.usefixtures('redis_clear_data_before_after',
+                         'pg_write_data')
+class TestLoginHistory:
+    postfix = '/login-history'
+
+    @pytest.mark.parametrize(
+        'access_data, expected_answer',
+        [
+            (
+              {"username": "admin@example.com",
+               "password": "Secret123"},
+              {'status': HTTPStatus.OK,
+               "user_id": "e9756a00-73d6-455c-8bfa-734d859867b0",
+               "login_time_format": "%Y-%m-%dT%H:%M:%S",
+               }
+            )
+        ]
+    )
+    async def test_get_user(self,
+                            get_token,
+                            access_data,
+                            expected_answer):
+        url = settings.service_url + PREFIX + self.postfix
+
+        access_token = await get_token(access_data)
+        header = {'Authorization': f'Bearer {access_token}'}
+
+        async with aiohttp.ClientSession(headers=header) as session:
+            async with session.get(url) as response:
+                assert response.status == expected_answer['status']
+
+                body = await response.json()
+                assert body[0]['user_id'] == expected_answer['user_id']
+                assert datetime.strptime(
+                    body[0]['login_time'][:body[0]['login_time'].rfind('.')],
+                    expected_answer['login_time_format'])
