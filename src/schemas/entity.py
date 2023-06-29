@@ -28,7 +28,7 @@ class UserData(BaseModel):
                            min_length=3,
                            max_length=50)
     disabled: bool = Field(default=False,
-                           description="True - active, False - inactive")
+                           description="True - inactive, False - active")
 
 
 class UserSignUp(UserLogin, UserData):
