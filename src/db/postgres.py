@@ -1,3 +1,5 @@
+import os
+
 from db import AbstractStorage
 from sqlalchemy.orm import declarative_base
 
@@ -10,8 +12,9 @@ Base = declarative_base()
 
 class Postgres(AbstractStorage):
     def __init__(self, url: str):
+        echo = (os.getenv('ENGINE_ECHO', 'False') == 'True')
         self.engine = create_async_engine(url,
-                                          echo=True,
+                                          echo=echo,
                                           future=True)
 
         self.async_session = async_sessionmaker(self.engine,

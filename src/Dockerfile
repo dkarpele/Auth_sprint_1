@@ -14,4 +14,5 @@ RUN pip install --upgrade pip \
 
 CMD ["/bin/sh", "-c", "pwd; cd src ; alembic upgrade head ; \
  python3 create_admin.py; \
- gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000"]
+ cd .. ; \
+ gunicorn -k uvicorn.workers.UvicornWorker --chdir src main:app --bind 0.0.0.0:8000"]
