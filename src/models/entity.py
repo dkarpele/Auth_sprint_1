@@ -28,7 +28,7 @@ class User(Base):
                  last_name: str = None,
                  disabled: bool = False) -> None:
         self.email = email
-        self.password = self.password = pwd_context.hash(password)
+        self.password = pwd_context.hash(password)
         self.first_name = first_name if first_name else ""
         self.last_name = last_name if last_name else ""
         self.disabled = disabled
