@@ -48,3 +48,5 @@ PASSWORD_DESC = "Password: Minimum eight characters, " \
                 "at least one letter and one number:"
 ROLE_TITLE_DESC = "Roles title"
 PERMISSIONS_DESC = "Permission for the role"
+PAGE_DESC = "Номер страницы"
+SIZE_DESC = "Количество элементов на странице"

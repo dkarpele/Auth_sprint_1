@@ -1,4 +1,6 @@
 from functools import lru_cache
+from typing import Annotated
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,3 +18,7 @@ def get_cache_service(
 def get_db_service(
         db: AsyncSession = Depends(get_session)) -> AsyncSession:
     return db
+
+
+DbDep = Annotated[AsyncSession, Depends(get_db_service)]
+CacheDep = Annotated[AbstractCache, Depends(get_cache_service)]

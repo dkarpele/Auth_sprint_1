@@ -5,22 +5,21 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from services.database import DbDep
 from services.token import verify_password, TokenData, \
     SECRET_KEY, decode_token, oauth2_scheme
 from services.exceptions import credentials_exception
-from db.postgres import get_session
 from models.entity import User
 from models.roles import UserRole, Role
 from models.history import LoginHistory
 from schemas.entity import UserInDB
 
 
-async def get_user(_id: str = None,
-                   email: str = None,
-                   db: AsyncSession = Depends(get_session)):
+async def get_user(db: DbDep,
+                   _id: str = None,
+                   email: str = None):
     async with db:
         if _id:
             user_exists = await db.execute(
@@ -31,7 +30,8 @@ async def get_user(_id: str = None,
                 select(User).
                 where(User.email == email))
         else:
-            raise logging.exception("Parameters _id or email weren't fulfilled")
+            raise logging.exception("Parameters _id or email weren't "
+                                    "fulfilled")
         user = user_exists.scalars().all()
         if user:
             return UserInDB(**jsonable_encoder(user[0]))
@@ -39,7 +39,7 @@ async def get_user(_id: str = None,
 
 async def authenticate_user(username: str,
                             password: str,
-                            db: AsyncSession = Depends(get_session)):
+                            db: DbDep):
     user = await get_user(email=username, db=db)
     if not user:
         return False
@@ -49,7 +49,7 @@ async def authenticate_user(username: str,
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
-                           db: AsyncSession = Depends(get_session)):
+                           db: DbDep):
     _id, _ = await decode_token(token, SECRET_KEY)
     token_data = TokenData(id=_id)
     user = await get_user(_id=token_data.id, db=db)
@@ -69,7 +69,7 @@ async def get_current_active_user(
 
 
 async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
-                           db: AsyncSession = Depends(get_session)):
+                           db: DbDep):
     try:
         user_id, _ = await decode_token(token, SECRET_KEY)
 
@@ -100,10 +100,14 @@ async def check_admin_user(token: Annotated[str, Depends(oauth2_scheme)],
                             headers={"WWW-Authenticate": "Bearer"})
 
 
-async def add_history(user_id: UUID,
-                      source: str = None,
-                      db: AsyncSession = Depends(get_session)) -> None:
+async def add_history(db: DbDep,
+                      user_id: UUID,
+                      source: str = None) -> None:
     history = LoginHistory(user_id, source)
     db.add(history)
     await db.commit()
     await db.refresh(history)
+
+
+CheckAdminDep = Annotated[bool, Depends(check_admin_user)]
+CurrentUserDep = Annotated[User, Depends(get_current_active_user)]

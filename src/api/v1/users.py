@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
-from api.v1 import check_entity_exists, DbDep, CurrentUserDep, CheckAdminDep
+from api.v1 import check_entity_exists
+from models.model import PaginateModel
+from services.users import CurrentUserDep, CheckAdminDep
+from services.database import DbDep
 from models.entity import User
 from models.history import LoginHistory
 from models.roles import UserRole, Role
@@ -13,8 +18,8 @@ from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
 from schemas.roles import RoleCreate
 from services.token import get_password_hash
 
-
 router = APIRouter()
+Paginate = Annotated[PaginateModel, Depends(PaginateModel)]
 
 
 @router.get("/me",
@@ -59,15 +64,22 @@ async def change_login_password(
 
 
 @router.get("/login-history",
-            description="История пользователя",
+            description="История логинов пользователя",
             response_model=list[UserHistory],
             status_code=status.HTTP_200_OK)
 async def get_login_history(current_user: CurrentUserDep,
-                            db: DbDep) -> list[UserHistory]:
+                            db: DbDep,
+                            pagination: Paginate) -> list[UserHistory]:
+
+    page_number = pagination.page_number
+    page_size = pagination.page_size
 
     history_exists = await db.execute(
         select(LoginHistory).
-        filter(LoginHistory.user_id == current_user.id)
+        filter(LoginHistory.user_id == current_user.id).
+        order_by(LoginHistory.login_time.desc()).
+        offset((page_number - 1) * page_size).
+        limit(page_size)
     )
     history = history_exists.scalars().all()
     return [UserHistory(user_id=h.user_id,

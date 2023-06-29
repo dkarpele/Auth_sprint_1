@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.exc import DBAPIError
 
-from api.v1 import check_entity_exists, DbDep
-
+from api.v1 import check_entity_exists
+from services.database import DbDep
 
 from models.roles import Role
 from schemas.roles import RoleInDB, RoleCreate
