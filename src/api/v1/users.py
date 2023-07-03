@@ -10,10 +10,10 @@ from api.v1 import check_entity_exists
 from models.model import PaginateModel
 from services.users import CurrentUserDep, CheckAdminDep
 from services.database import DbDep
-from models.entity import User
+from models.users import User
 from models.history import LoginHistory
 from models.roles import UserRole, Role
-from schemas.entity import UserResponseData, UserLogin, UserRoleInDB, \
+from schemas.users import UserResponseData, UserLogin, UserRoleInDB, \
     UserRoleCreate, UserHistory
 from schemas.roles import RoleCreate
 from services.token import get_password_hash

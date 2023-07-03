@@ -2,7 +2,7 @@ import pytest_asyncio
 from sqlalchemy.future import select
 
 from tests.functional.settings import settings
-from src.models.entity import User
+from src.models.users import User
 
 
 @pytest_asyncio.fixture(scope='function')

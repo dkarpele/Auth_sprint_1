@@ -12,9 +12,9 @@ from sqlalchemy.orm import sessionmaker
 
 
 from core.config import database_dsn
-from models.entity import User
+from models.users import User
 from models.roles import UserRole, Role
-from schemas.entity import UserSignUp
+from schemas.users import UserSignUp
 
 load_dotenv()
 

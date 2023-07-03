@@ -2,7 +2,7 @@ import pytest_asyncio
 
 from sqlalchemy import delete, insert
 
-from src.models.entity import User
+from src.models.users import User
 from src.models.roles import Role, UserRole
 from src.models.history import LoginHistory
 from tests.functional.testdata.pg_data import users, roles, users_roles

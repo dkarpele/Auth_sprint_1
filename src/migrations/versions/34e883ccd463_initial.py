@@ -7,7 +7,7 @@ Create Date: 2023-06-28 21:08:47.740456
 """
 from alembic import op
 
-from models.entity import User
+from models.users import User
 from models.roles import Role, UserRole
 from models.history import LoginHistory
 

@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.future import select
 
 from services.database import DbDep, CacheDep
-from models.entity import User
-from schemas.entity import UserSignUp, UserResponseData
+from models.users import User
+from schemas.users import UserSignUp, UserResponseData
 from services.exceptions import wrong_username_or_password
 from services.token import Token, create_token, \
     add_not_valid_access_token_to_cache, refresh_access_token, TokenDep

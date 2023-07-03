@@ -11,10 +11,10 @@ from services.database import DbDep
 from services.token import verify_password, TokenData, \
     SECRET_KEY, decode_token, oauth2_scheme
 from services.exceptions import credentials_exception
-from models.entity import User
+from models.users import User
 from models.roles import UserRole, Role
 from models.history import LoginHistory
-from schemas.entity import UserInDB
+from schemas.users import UserInDB
 
 
 async def get_user(db: DbDep,

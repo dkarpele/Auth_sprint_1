@@ -10,7 +10,7 @@ from logging import config as logging_config
 from tests.functional.settings import settings
 from tests.functional.utils.logger import LOGGING
 from src.models.history import LoginHistory
-from src.models.entity import User
+from src.models.users import User
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
