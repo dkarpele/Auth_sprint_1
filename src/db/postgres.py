@@ -1,13 +1,14 @@
 import os
 
 from db import AbstractStorage
+from sqlalchemy import MetaData
 from sqlalchemy.orm import declarative_base
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, \
     async_sessionmaker
 
 # Создаём базовый класс для будущих моделей
-Base = declarative_base()
+Base = declarative_base(metadata=MetaData(schema='auth'))
 
 
 class Postgres(AbstractStorage):
